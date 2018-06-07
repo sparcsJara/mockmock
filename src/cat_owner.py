@@ -3,12 +3,15 @@ class CatOwner:
     self.catDatabase = catDatabase
 
   def callCats(self):
-    cats = self.catDatabase.getCats()
-    if (len(cats) == 0):
+    noCats = self.catDatabase.getNoCats()
+    if noCats == 0:
       return 'No cat'
+    elif noCats == 1:
+      return 'Lonely cat meowed..'
+    elif noCats == 2:
+      return 'Meow meou!'
     else:
-      return ", ".join(cats)
-        
+      return 'Meooooow~'
 
-  def adoptCat(self, newCat):
-    self.catDatabase.addCat(newCat)
+  def adoptCat(self):
+    self.catDatabase.addCat()

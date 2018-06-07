@@ -1,9 +1,9 @@
 class CatDatabase:
   def __init__(self):
-    self.cats = ['샴', '뱅골', '러시안 블루']
+    self.noCats = 0
 
-  def getCats(self):
-    return self.cats
+  def getNoCats(self):
+    return self.noCats
 
   def addCat(self, newCat):
-    self.cats.append(newCat)
+    self.noCats += 1

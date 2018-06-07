@@ -241,4 +241,3 @@ def instrument(filename):
 
     return num_branches, branches, pdg_class, pdg_methods
 
-print(instrument('sample.py'))

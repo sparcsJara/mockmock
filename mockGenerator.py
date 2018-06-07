@@ -21,6 +21,12 @@ class mockGenerator:
         # ast tree
         self.root = astor.parse_file(self.testFile)
 
+    def getCorrectTestFileAST(self):
+        return astor.parse_file(self.testFile)
+    
+    def getCorrectSourceCodeAST(self):
+        return astor.parse_file(self.sourceCode)
+
     def recordMockMethodInfo(self):
         targetMethods = self.getMethods()
         test_file_ast = self.getCorrectTestFileAST() # classDef
@@ -47,7 +53,6 @@ class mockGenerator:
             return_list.append((target_name, count_of_target))
 
         self.mockMethodInfo = return_list
-        print(return_list)
         return return_list
 
     def getTargetTest(self):
@@ -94,21 +99,6 @@ class mockGenerator:
         # 대입에서 왼쪽이 여러개일 가능성을 배제하고, [0]으로 첫번째 인자의 이름을 가져옵니다.
         mockName = mockInstantiation.targets[0].id
 
-    def getMethods(self):
-        method_dict = {}
-        mock_ast = astor.parse_file(self.mockTarget)
-        classdef_ast = mock_ast.__getattribute__("body")[0]
-        for node in ast.walk(classdef_ast):
-            if isinstance(node, ast.FunctionDef):
-                return_int = False
-                returns = node.__getattribute__("returns")
-                if(isinstance(returns, ast.Name)):
-                    name = returns.__getattribute__("id")
-                    if(eq(name, "int")):
-                        return_int = True
-                method_dict[node.__getattribute__("name")] = return_int
-        return method_dict
-
         ################## 변형 ##################
         # TODO: from unittest.mock import patch 합니다.
         self.root.body = [
@@ -139,10 +129,10 @@ class mockGenerator:
         test.body = newBody
 
         # test의 argument를 args와 (@patch가 주입하는) mock으로 지정합니다.
-        numMethodCalls = reduce(lambda x, y: 1 + y, self.mockMethodInfo[1])
+        numMethodCalls = len(self.mockMethodInfo)
 
         test.args.args = [
-            *['arg' + str(n) for n in range(numMethodCalls - 1)],
+            *['arg' + str(n) for n in range(numMethodCalls)],
             ast.arg(arg=mockName, annotation=None)
         ]
 
@@ -152,6 +142,22 @@ class mockGenerator:
                 for index, method in enumerate(self.mockMethodInfo)],
             *test.body
         ]
+
+    def getMethods(self):
+        method_dict = {}
+        mock_ast = astor.parse_file(self.mockTarget.split(".")[0] + '.py')
+        classdef_ast = mock_ast.__getattribute__("body")[0]
+        for node in ast.walk(classdef_ast):
+            if isinstance(node, ast.FunctionDef):
+                return_int = False
+                returns = node.__getattribute__("returns")
+                if(isinstance(returns, ast.Name)):
+                    name = returns.__getattribute__("id")
+                    if(eq(name, "int")):
+                        return_int = True
+                method_dict[node.__getattribute__("name")] = return_int
+        return method_dict
+
 
 if __name__ == '__main__':
     gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase')

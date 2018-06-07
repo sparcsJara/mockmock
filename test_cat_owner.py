@@ -1,11 +1,7 @@
-from unittest.mock import Mock, MagicMock
-
 from cat_database import CatDatabase
 from cat_owner import CatOwner
 
-def test1():
-  db = Mock()
-  db.getNoCats = MagicMock(side_effect=[0, 4])
+def test1(db):
 
   o = CatOwner(db)
 

@@ -10,11 +10,10 @@ class mockGenerator:
         self.sourceCode = sourceCode
 
     def recordMockMethodInfo(self):
-        targetMethods = self.getMethods(self.mockTarget)
+        targetMethods = self.getMethods()
         test_file_ast = self.getCorrectTestFileAST() # classDef
         source_code_ast = self.getCorrectSourceCodeAST() # body = functiondef
 
-        intMethods = []
         return_list = []
         for name, isInt in targetMethods.items():
             if not isInt:
@@ -23,15 +22,20 @@ class mockGenerator:
             count_of_target = 0
             for node in ast.walk(test_file_ast):
                 if isinstance(node, ast.Call):
-                    if node.__getattribute__("func").__getattribute__("attr") in intMethods:
-                        count_of_target = count_of_target + 1
+                    call_node = node.__getattribute__("func")
+                    if isinstance(call_node, ast.Attribute):
+                        if eq(call_node.__getattribute__("attr"), target_name):
+                            count_of_target = count_of_target + 1
             for node in ast.walk(source_code_ast):
                 if isinstance(node, ast.Call):
-                    if node.__getattribute__("func").__getattribute__("attr") in intMethods:
-                        count_of_target = count_of_target + 1
-            return_list.appen(tuple(target_name, count_of_target))
+                    call_node = node.__getattribute__("func")
+                    if isinstance(call_node, ast.Attribute):
+                        if eq(call_node.__getattribute__("attr"), target_name):
+                            count_of_target = count_of_target + 1
+            return_list.append((target_name, count_of_target))
 
         self.mockMethodInfo = return_list
+        print(return_list)
         return return_list
 
     def injectMock(self, testFile, mockTarget, methodCalls):
@@ -42,6 +46,7 @@ class mockGenerator:
         method_dict = {}
         mock_ast = astor.parse_file(self.mockTarget)
         classdef_ast = mock_ast.__getattribute__("body")[0]
+        print(astor.dump_tree(classdef_ast))
         for node in ast.walk(classdef_ast):
             if isinstance(node, ast.FunctionDef):
                 return_int = False
@@ -63,6 +68,6 @@ class mockGenerator:
         return astor.parse_file(self.sourceCode)
 
 if __name__ == '__main__':
-  gen = mockGenerator('test_cat_owner.py', 'cat_database.py')
-  gen.getMockMethodInfo()
-  gen.injectMock(methods)
+  gen = mockGenerator("cat_owner.py", 'test_cat_owner.py', 'cat_database.py')
+  gen.recordMockMethodInfo()
+  # gen.injectMock()

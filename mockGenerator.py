@@ -1,4 +1,23 @@
-import sys
+import astor
 
-# 1. patch 된 class의 메소드를 확인해서, int를 리턴하는 놈을 찾는다.
-# 2. 리턴값을 조작하는 API 제공
+class mockGenerator:
+  def __init__(self, testFile, mockTarget):
+    self.testFile = testFile
+    self.mockTarget = mockTarget
+
+  def recordMockMethodInfo(self, testFile, mockTarget):
+    ## TODO: 문영
+    self.mockMethodInfo = {
+      'method1': 2,
+      'method2': 1
+    }
+
+  def injectMock(self, testFile, mockTarget, methodCalls):
+    testFile = astor.parse_file(testFile)
+    print(astor.dump_tree(testFile))
+
+
+if __name__ == '__main__':
+  gen = mockGenerator('test_cat_owner.py', 'cat_database.py')
+  gen.getMockMethodInfo()
+  gen.injectMock(methods)

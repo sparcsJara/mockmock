@@ -14,7 +14,7 @@ class CatOwner:
             if noCats < 200:
                 return 'Meow meou!'
 
-            else if noCats < 10000:
+            elif noCats < 10000:
                 return 'What?!'
 
             else:

@@ -5,7 +5,7 @@ from io import StringIO
 import sys
 import contextlib
 import os
-
+from BranchInfo import BranchInfo
 
 def instrument(filename):
     root = astor.parse_file(filename)
@@ -239,5 +239,5 @@ def instrument(filename):
 
     #print(pdg_class.is_root, pdg_methods[0].is_root, pdg_methods[1].is_root)
 
-    return num_branches, branches, pdg_class, pdg_methods
+    return BranchInfo(num_branches, branches), pdg_class, pdg_methods
 

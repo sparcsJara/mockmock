@@ -4,6 +4,10 @@ import inspect
 from operator import eq
 from functools import reduce
 
+from io import StringIO
+import sys
+import contextlib
+
 class mockGenerator:
     def __init__(self, sourceCode, testFile, mockTarget):
         # cat_owner.py
@@ -60,6 +64,7 @@ class mockGenerator:
             if type(node[0]) is ast.FunctionDef]
 
         # 첫번째 테스트 함수가 타겟 테스트라고 가정합니다.
+        self.testName = tests[0].name
         return tests[0]
 
     def findMockInstantiationAndRemove(self, test):
@@ -110,6 +115,12 @@ class mockGenerator:
             *self.root.body
         ]
 
+        # source code import를 instrumented source code import로 바꿉니다.
+        for node in self.root.body:
+            if type(node) == ast.ImportFrom:
+                if node.module == self.sourceCode.split(".")[0]:
+                    node.module = 'instrumented_' + node.module
+
         # @patch로 mock을 주입합니다.
         test.decorator_list = [ast.Call(
             func=ast.Name(id='patch'),
@@ -158,9 +169,47 @@ class mockGenerator:
                 method_dict[node.__getattribute__("name")] = return_int
         return method_dict
 
+    def writeToFile(self):
+        fileName = 'instrumented_' + self.testFile
+        f = open(fileName, 'w')
+        f.write(astor.to_source(self.root))
+        return fileName
+
+    @contextlib.contextmanager
+    def stdoutIO(self, stdout=None):
+        old = sys.stdout
+        if stdout is None:
+            stdout = StringIO()
+        sys.stdout = stdout
+        yield stdout
+        sys.stdout = old
+
+    # auxiliary function for timeout exception handling
+    def handler(self, signum, frame):
+        raise Exception('timeout')
+
+
+
+    def run(self, args):
+        gen.recordMockMethodInfo()
+        gen.injectMock()
+
+        fileName = self.writeToFile()
+        args = map(lambda x: str(x), args)
+        
+        exec('from ' + fileName.split(".")[0] + ' import ' + self.testName)
+
+        with self.stdoutIO() as s:
+            try:
+                eval(self.testName + '(' + ", ".join(args) + ')')
+            except Exception as exc:
+                print()
+                print(exc)
+
+        log = s.getvalue()
+        print(log)
+        return log
 
 if __name__ == '__main__':
     gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase')
-    gen.recordMockMethodInfo()
-    gen.injectMock()
-    print(astor.to_source(gen.root))
+    gen.run([1, 2])

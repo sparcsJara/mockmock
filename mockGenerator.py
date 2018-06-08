@@ -188,6 +188,10 @@ class mockGenerator:
     def handler(self, signum, frame):
         raise Exception('timeout')
 
+    def getMethodNum(self):
+        self.recordMockMethodInfo()
+        return len(self.mockMethodInfo)
+
     def run(self, args):
         self.recordMockMethodInfo()
         self.injectMock()
@@ -209,4 +213,5 @@ class mockGenerator:
 
 if __name__ == '__main__':
     gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase')
+    print(gen.getMethodNum())
     print(gen.run([1, 2]))

@@ -1,6 +1,7 @@
 from searchBasedTestGenerator import test_generator
 import sys
 from mockGenerator import mockGenerator
+import os
 
 def main():
     args = sys.argv[1:]
@@ -14,6 +15,9 @@ def main():
             total_branches += 1
             if tf:
                 executed_branches += 1
+
+    os.remove('instrumented_' + args[0])
+    os.remove('instrumented_' + args[1])
 
     print('total number of branches :', total_branches)
     print('number of executed_branches :', executed_branches)

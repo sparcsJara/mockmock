@@ -25,6 +25,10 @@ class mockGenerator:
         # ast tree
         self.root = astor.parse_file(self.testFile)
 
+        self.recordMockMethodInfo()
+        self.injectMock()
+        self.instrumentedTestFileName = self.writeToFile()
+
     def getCorrectTestFileAST(self):
         return astor.parse_file(self.testFile)
     
@@ -193,12 +197,9 @@ class mockGenerator:
         return len(self.mockMethodInfo)
 
     def run(self, args):
-        self.recordMockMethodInfo()
-        self.injectMock()
-
-        fileName = self.writeToFile()
+        fileName = self.instrumentedTestFileName
         args = map(lambda x: str(x), args)
-        
+
         exec('from ' + fileName.split(".")[0] + ' import ' + self.testName)
 
         with self.stdoutIO() as s:
@@ -215,3 +216,5 @@ if __name__ == '__main__':
     gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase')
     print(gen.getMethodNum())
     print(gen.run([1, 2]))
+    print(gen.run([3, 6]))
+    print(gen.run([7, 1]))

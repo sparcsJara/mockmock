@@ -189,8 +189,8 @@ class mockGenerator:
         raise Exception('timeout')
 
     def run(self, args):
-        gen.recordMockMethodInfo()
-        gen.injectMock()
+        self.recordMockMethodInfo()
+        self.injectMock()
 
         fileName = self.writeToFile()
         args = map(lambda x: str(x), args)

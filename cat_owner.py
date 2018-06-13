@@ -4,21 +4,27 @@ class CatOwner:
 
     def callCats(self):
         noCats = self.catDatabase.getNoCats()
-        if noCats <= 0:
-            return 'No cat'
+        stmt = ''
+        if noCats <= 5:
+            self.catDatabase.addCat()
+            stmt += 'You should definitely adopt new cats'
+            afterNoCats = self.catDatabase.getNoCats()
+            if afterNoCats > 3:
+                stmt += ', maybe not'
+                return stmt
 
-        elif noCats == 1:
-            return 'Lonely cat meowed..'
+        elif noCats < 200:
+            return 'Meow meou!'
+
+        elif noCats < 10000:
+            return 'What?!'
 
         else:
-            if noCats < 200:
-                return 'Meow meou!'
+            return 'You... you are a stranger..'
 
-            elif noCats < 10000:
-                return 'What?!'
-
-            else:
-                return 'You... you are strange..'
+        self.catDatabase.addCat()
+        stmt += ', and adopt another cat'
+        return stmt
 
     def adoptCat(self):
         self.catDatabase.addCat()

@@ -9,7 +9,7 @@ import sys
 import contextlib
 
 class mockGenerator:
-    def __init__(self, sourceCode, testFile, mockTarget):
+    def __init__(self, sourceCode, testFile, mockTarget, mockMethodInfo):
         # cat_owner.py
         self.sourceCode = sourceCode
 
@@ -25,13 +25,15 @@ class mockGenerator:
         # ast tree
         self.root = astor.parse_file(self.testFile)
 
+        self.mockMethodInfo = mockMethodInfo
+
         self.recordMockMethodInfo()
         self.injectMock()
         self.instrumentedTestFileName = self.writeToFile()
 
     def getCorrectTestFileAST(self):
         return astor.parse_file(self.testFile)
-    
+
     def getCorrectSourceCodeAST(self):
         return astor.parse_file(self.sourceCode)
 
@@ -213,7 +215,7 @@ class mockGenerator:
         return log
 
 if __name__ == '__main__':
-    gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase')
+    gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase',{})
     print(gen.getMethodNum())
     print(gen.run([1, 2]))
     print(gen.run([3, 6]))

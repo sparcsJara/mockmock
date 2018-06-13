@@ -84,7 +84,7 @@ class mockGenerator:
 
     def parameterListBuilder(self, parameter_list):
         print (ast.List(elts=reduce(lambda a, m: [*a, ast.Num(num=m)], parameter_list, [])))
-        return ast.List(elts=reduce(lambda a, m: [*a, ast.Num(num=m)], parameter_list, []))
+        return ast.List(elts=reduce(lambda a, m: [*a, ast.Num(n=m)], parameter_list, []))
 
     def injectMock(self):
         ################## 분석 ##################
@@ -164,7 +164,7 @@ class mockGenerator:
         i = 0
         for methodName, parameters in self. mockMethodInfo:
             target_end = target_start + parameter_length_list[i]
-            injectingMock.append(self.mockResponseBuilder(mockName, methodName, target_start. target_end ))
+            injectingMock.append(self.mockResponseBuilder(mockName, methodName, target_start, target_end ))
             target_start = target_end
             i = i+1
 
@@ -196,6 +196,7 @@ class mockGenerator:
     def writeToFile(self):
         fileName = 'instrumented_' + self.testFile
         f = open(fileName, 'w')
+        # print(astor.dump_tree(self.root))
         f.write(astor.to_source(self.root))
         return fileName
 
@@ -256,7 +257,13 @@ def sideEffectGenerator(target_parameters, args):
 
 
 if __name__ == '__main__':
-    gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase', {})
+    gen = mockGenerator(
+        'cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase',
+        {
+            'getNoCats': [12345678, 12345680, None],
+            'addCat': [12345679, 12345681, 12345682, None]
+        }
+    )
     # print(gen.getMethodNum())
     # print(gen.run([1, 2]))
     # print(gen.run([3, 6]))

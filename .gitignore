@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+instrumented_cat_owner.py
+instrumented_test_cat_owner.py

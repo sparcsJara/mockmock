@@ -216,7 +216,7 @@ def test_generator(target_name, test_name, mock_name):
     for tests in b_info.test_suite[1:]:
         for test in tests:
             gen.recordMock(test)
-            # print(test)
+            gen.recordMocks()
 
     return b_info.test_suite[1:]
 

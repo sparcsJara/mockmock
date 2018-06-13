@@ -28,9 +28,20 @@ class mockGenerator:
         self.root = copy.deepcopy(self.clean_root)
         self.clean_test = copy.deepcopy(self.getTargetTest())
 
+        self.clean_test.decorator_list = [
+            ast.Call(
+                func=ast.Name(id='patch'),
+                args=[ast.Str(s=self.mockTarget)],
+                keywords=[]
+            )
+        ]
+        self.test_suite_count = 0
+
         self.mockMethodInfo = self.transferListMockMethodInfo(mockMethodInfo)
         self.injectMock()
         self.instrumentedTestFileName = self.writeToFile()
+
+        self.mockedTestSuite = []
 
     def getCorrectTestFileAST(self):
         return astor.parse_file(self.testFile)
@@ -110,7 +121,6 @@ class mockGenerator:
         parameter_length_list = reduce(lambda a, m: [*a, len(m[1])], self.mockMethodInfo, [])
 
         ################## 변형 ##################
-        # TODO: from unittest.mock import patch 합니다.
         self.root.body = [
             ast.ImportFrom(
                 module='unittest.mock',
@@ -154,23 +164,19 @@ class mockGenerator:
         test.body = newBody
 
         # test의 argument를 args와 (@patch가 주입하는) mock으로 지정합니다.
-        numMethodCalls = len(self.mockMethodInfo)
-
         test.args.args = [
             ast.arg(arg='args', annotation=None),
             ast.arg(arg=mockName, annotation=None)
         ]
 
         # mock이 return하는 값으로 args를 대입합니다.
-
-
         injectingMock = []
 
         target_start = 0
         i = 0
         for methodName, parameters in self.mockMethodInfo:
             target_end = target_start + parameter_length_list[i]
-            injectingMock.append(self.mockResponseBuilder(mockName, methodName, target_start, target_end ))
+            injectingMock.append(self.mockResponseBuilder(mockName, methodName, target_start, target_end))
             target_start = target_end
             i = i+1
 
@@ -270,9 +276,78 @@ class mockGenerator:
             for methodCall in parameter_list_with_mocked_value:
                 if call[1][0] == methodCall[1]:
                     methods[methodCall[0]].append(methodCall[2])
-        print(methods)
-        print(astor.dump_tree(self.clean_test))
 
+
+        mockInstantiation = self.findMockInstantiationAndRemove(self.clean_test)
+        mockName = mockInstantiation.targets[0].id
+
+        one_testcase = copy.deepcopy(self.clean_test)
+
+        one_testcase.args.args = [
+            ast.arg(arg=mockName, annotation=None)
+        ]
+
+        newBody = []
+        for node in one_testcase.body:
+            try:
+                if type(node) is not ast.Assign or node.value.func.id != self.mockClassName:
+                    newBody.append(node)
+            except AttributeError:
+                pass
+
+        one_testcase.body = newBody
+
+        assign_mock = [ast.Assign(
+            targets=[ast.Attribute(
+                value=ast.Attribute(
+                    value=ast.Name(id=mockName),
+                    attr=method
+                ),
+                attr='side_effect'
+            )],
+            value=ast.List(elts=[ast.Num(n=int(n)) for n in values])
+        ) for method, values in methods.items()]
+
+        one_testcase.body = [
+            *assign_mock,
+            *one_testcase.body
+        ]
+
+
+        one_testcase.name = 'test' + str(self.test_suite_count)
+        self.test_suite_count += 1
+
+        self.mockedTestSuite.append(one_testcase)
+
+        # print(mockName)
+        # print(methods)
+        # print(astor.dump_tree(one_testcase))
+
+    def recordMocks(self):
+        root_for_one_testcase = copy.deepcopy(self.clean_root)
+        root_for_one_testcase.body = [
+            ast.ImportFrom(
+                module='unittest.mock',
+                names=[ast.alias(name='patch', asname=None)],
+                level=0
+            ),
+            *root_for_one_testcase.body
+        ]
+
+        root_for_one_testcase.body = [
+            node for node in root_for_one_testcase.body 
+            if type(node) is not ast.FunctionDef or node.name != self.testName
+        ]
+
+        root_for_one_testcase.body = [
+            *root_for_one_testcase.body,
+            *self.mockedTestSuite
+        ]
+
+        result_test_suite = open('result_test_suite.py', 'w')
+        result_test_suite.write(astor.to_source(root_for_one_testcase))
+        result_test_suite.close()
+        
 def sideEffectGenerator(target_parameters, args):
     def sideEffect(parameter):
         if parameter in target_parameters:
@@ -296,6 +371,6 @@ if __name__ == '__main__':
     # mock = gen.recordCall([3, 6, 9, 19, 29, 1, 4])
     # print(gen.run([7, 1]))
     # mock = gen.recordCall([1, 2, 3, 4, 5, 6, 7])
-    mock = gen.recordMock([-26, -12, -18, -35, -70, 80, 63, -1, 11])
+    mock = gen.recordMock([-26, -12, -18, -35, -70, 80, 63])
     for call in mock.mock_calls:
         print(call)

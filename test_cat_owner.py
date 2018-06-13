@@ -4,7 +4,7 @@ from cat_owner import CatOwner
 def test1():
     db = CatDatabase()
     o = CatOwner(db)
-
+    
     # assert o.callCats() == 'You should definitely adopt new cats, and adopt another cat'
     o.callCats()
     o.adoptCat()

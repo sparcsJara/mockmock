@@ -105,3 +105,4 @@ venv.bak/
 
 instrumented_cat_owner.py
 instrumented_test_cat_owner.py
+result_test_suite.py

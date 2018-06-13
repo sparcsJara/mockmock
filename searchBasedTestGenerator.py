@@ -6,9 +6,9 @@ import random
 
 def test_generator(target_name, test_name, mock_name):
 
-    b_info, pdg_class, pdg_methods = instrument(target_name)
+    b_info, pdg_class, pdg_methods, method_dic = instrument(target_name, mock_name)
 
-    gen = mockGenerator(target_name, test_name, mock_name)
+    gen = mockGenerator(target_name, test_name, mock_name, method_dic)
     num_methods = gen.getMethodNum()
 
     def run(args):

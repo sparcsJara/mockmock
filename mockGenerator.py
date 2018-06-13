@@ -5,7 +5,7 @@ from operator import eq
 from functools import reduce
 
 class mockGenerator:
-    def __init__(self, sourceCode, testFile, mockTarget):
+    def __init__(self, sourceCode, testFile, mockTarget, mockMethodInfo):
         # cat_owner.py
         self.sourceCode = sourceCode
 
@@ -20,6 +20,8 @@ class mockGenerator:
 
         # ast tree
         self.root = astor.parse_file(self.testFile)
+
+        self.mockMethodInfo = mockMethodInfo
 
     def recordMockMethodInfo(self):
         targetMethods = self.getMethods()
@@ -96,7 +98,7 @@ class mockGenerator:
 
     def getMethods(self):
         method_dict = {}
-        mock_ast = astor.parse_file(self.mockTarget)
+        mock_ast = astor.parse_file(self.mockTarget.split(".")[0] + '.py')
         classdef_ast = mock_ast.__getattribute__("body")[0]
         for node in ast.walk(classdef_ast):
             if isinstance(node, ast.FunctionDef):
@@ -153,8 +155,17 @@ class mockGenerator:
             *test.body
         ]
 
+    def getCorrectTestFileAST(self):
+        return astor.parse_file(self.testFile)
+
+    def getCorrectSourceCodeAST(self):
+        return astor.parse_file(self.sourceCode)
+
+    def sideEffect(self):
+
+
 if __name__ == '__main__':
-    gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase')
+    gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase', {})
     gen.recordMockMethodInfo()
     gen.injectMock()
     print(astor.to_source(gen.root))

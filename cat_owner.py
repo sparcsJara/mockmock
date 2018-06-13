@@ -16,10 +16,14 @@ class CatOwner:
         elif noCats < 200:
             return 'Meow meou!'
 
-        elif noCats < 10000:
+        elif noCats < 9999:
             return 'What?!'
 
         else:
+            self.catDatabase.addCat()
+            if self.catDatabase.getNoCats() == 10000:
+                return 'Perfect 10000!'
+            
             return 'You... you are a stranger..'
 
         self.catDatabase.addCat()

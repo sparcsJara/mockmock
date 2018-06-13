@@ -222,10 +222,10 @@ class mockGenerator:
         raise Exception('timeout')
 
     def getMethodNum(self):
-        self.recordMockMethodInfo()
-        return len(self.mockMethodInfo)
+        return reduce(lambda a, m: a + len(m[1]), self.mockMethodInfo, 0)
 
     def run(self, args):
+        # print(args)
         fileName = self.instrumentedTestFileName
         args = map(lambda x: str(x), args)
 
@@ -233,7 +233,7 @@ class mockGenerator:
 
         with self.stdoutIO() as s:
             try:
-                eval(self.testName + '(' + ", ".join(args) + ')')
+                eval(self.testName + '([' + ", ".join(args) + '])')
             except Exception as exc:
                 print()
                 print(exc)
@@ -245,13 +245,12 @@ class mockGenerator:
         fileName = self.instrumentedTestFileName
         args = map(lambda x: str(x), args)
 
-        with self.stdoutIO() as _:
-            try:
-                exec('from ' + fileName.split(".")[0] + ' import ' + self.testName)
-                return eval(self.testName + '(' + ", ".join(args) + ')')
-            except Exception as exc:
-                print()
-                print(exc)
+        # with self.stdoutIO() as _:
+        try:
+            exec('from ' + fileName.split(".")[0] + ' import ' + self.testName)
+            return eval(self.testName + '([' + ", ".join(args) + '])')
+        except Exception as exc:
+            print(exc)
 
 
 def sideEffectGenerator(target_parameters, args):
@@ -273,10 +272,10 @@ if __name__ == '__main__':
         }
     )
     # print(gen.getMethodNum())
-    # print(gen.run([1, 2]))
-    # print(gen.run([3, 6]))
+    # print(gen.run([1, 2, 3, 4, 5, 6, 7]))
+    # mock = gen.recordCall([3, 6, 9, 19, 29, 1, 4])
     # print(gen.run([7, 1]))
-
-    mock = gen.recordCall([1, 2])
+    # mock = gen.recordCall([1, 2, 3, 4, 5, 6, 7])
+    mock = gen.recordCall([0, 0, 0, 0, 0, 0, 0])
     for call in mock.mock_calls:
         print(call)

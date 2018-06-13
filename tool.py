@@ -16,8 +16,8 @@ def main():
             if tf:
                 executed_branches += 1
 
-    os.remove('instrumented_' + args[0])
-    os.remove('instrumented_' + args[1])
+    # os.remove('instrumented_' + args[0])
+    # os.remove('instrumented_' + args[1])
 
     print('total number of branches :', total_branches)
     print('number of executed_branches :', executed_branches)

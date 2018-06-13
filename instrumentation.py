@@ -5,9 +5,9 @@ from io import StringIO
 import sys
 import contextlib
 import os
+from BranchInfo import BranchInfo
 
-
-def instrument(filename):
+def instrument(filename, mockname):
     root = astor.parse_file(filename)
 
     def pre_instrument(node):
@@ -20,6 +20,31 @@ def instrument(filename):
                     pre_instrument(stmt)
 
     pre_instrument(root)
+
+    # labeling method calls
+    mock_name = mockname
+    method_dic = {}
+    counter = 12345678
+    def dfs_instrument_method(node):
+        nonlocal mock_name
+        nonlocal method_dic
+        nonlocal counter
+
+        if isinstance(node, ast.Call):
+            if isinstance(node.func.value, ast.Attribute) and node.func.value.attr == mock_name or isinstance(node.func.value, ast.Name) and node.func.value.id == mock_name:
+                node.args = [ast.Num(n=counter)]
+                if node.func.attr in method_dic:
+                    method_dic[node.func.attr].append(counter)
+                else:
+                    method_dic[node.func.attr] = []
+                    method_dic[node.func.attr].append(counter)
+                counter += 1
+        else:
+            for child in ast.iter_child_nodes(node):
+                dfs_instrument_method(child)
+    dfs_instrument_method(root)
+
+
 
     pre_instrumented_file = open('pre_instrumented_' + filename, 'w')
     pre_instrumented_file.write(astor.to_source(root))
@@ -239,5 +264,5 @@ def instrument(filename):
 
     #print(pdg_class.is_root, pdg_methods[0].is_root, pdg_methods[1].is_root)
 
-    return num_branches, branches, pdg_class, pdg_methods
+    return BranchInfo(num_branches, branches), pdg_class, pdg_methods, method_dic
 

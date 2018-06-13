@@ -25,9 +25,7 @@ class mockGenerator:
         # ast tree
         self.root = astor.parse_file(self.testFile)
 
-        self.mockMethodInfo = mockMethodInfo
-
-        self.recordMockMethodInfo()
+        self.mockMethodInfo = self.transferListMockMethodInfo(mockMethodInfo)
         self.injectMock()
         self.instrumentedTestFileName = self.writeToFile()
 
@@ -37,32 +35,10 @@ class mockGenerator:
     def getCorrectSourceCodeAST(self):
         return astor.parse_file(self.sourceCode)
 
-    def recordMockMethodInfo(self):
-        targetMethods = self.getMethods()
-        test_file_ast = self.getCorrectTestFileAST() # classDef
-        source_code_ast = self.getCorrectSourceCodeAST() # body = functiondef
-
+    def transferListMockMethodInfo(self, methodInfoDict):
         return_list = []
-        for name, isInt in targetMethods.items():
-            if not isInt:
-                continue
-            target_name = name
-            count_of_target = 0
-            for node in ast.walk(test_file_ast):
-                if isinstance(node, ast.Call):
-                    call_node = node.__getattribute__("func")
-                    if isinstance(call_node, ast.Attribute):
-                        if eq(call_node.__getattribute__("attr"), target_name):
-                            count_of_target = count_of_target + 1
-            for node in ast.walk(source_code_ast):
-                if isinstance(node, ast.Call):
-                    call_node = node.__getattribute__("func")
-                    if isinstance(call_node, ast.Attribute):
-                        if eq(call_node.__getattribute__("attr"), target_name):
-                            count_of_target = count_of_target + 1
-            return_list.append((target_name, count_of_target))
-
-        self.mockMethodInfo = return_list
+        for key, parameters in methodInfoDict.items():
+            return_list.append((key, parameters))
         return return_list
 
     def getTargetTest(self):
@@ -116,6 +92,15 @@ class mockGenerator:
             ast.ImportFrom(
                 module='unittest.mock',
                 names=[ast.alias(name='patch', asname=None)],
+                level=0
+            ),
+            *self.root.body
+        ]
+
+        self.root.body = [
+            ast.ImportFrom(
+                module='mockGenerator',
+                names=[ast.alias(name='sideEffectGenerator', asname=None)],
                 level=0
             ),
             *self.root.body
@@ -213,6 +198,16 @@ class mockGenerator:
 
         log = s.getvalue()
         return log
+
+def sideEffectGenerator(target_parameters, args):
+    def sideEffect(parameter):
+        if parameter in target_parameters:
+            index = target_parameters.index(parameter)
+            return args[index]
+        else:
+            return args[-1]
+    return sideEffect
+
 
 if __name__ == '__main__':
     gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase',{})

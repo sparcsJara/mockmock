@@ -22,7 +22,8 @@ def instrument(filename, mockname):
     pre_instrument(root)
 
     # labeling method calls
-    mock_name = mockname
+    mock_name = mockname.split('.')[1]
+    mock_name = mock_name[0].lower() + mock_name[1:]
     method_dic = {}
     counter = 12345678
     def dfs_instrument_method(node):

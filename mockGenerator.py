@@ -160,6 +160,11 @@ class mockGenerator:
             *test.body
         ]
 
+        test.body = [
+            *test.body,
+            ast.Return(ast.Name(id=mockName))
+        ]
+
     def getMethods(self):
         method_dict = {}
         mock_ast = astor.parse_file(self.mockTarget.split(".")[0] + '.py')
@@ -214,9 +219,26 @@ class mockGenerator:
         log = s.getvalue()
         return log
 
+    def recordCall(self, args):
+        fileName = self.instrumentedTestFileName
+        args = map(lambda x: str(x), args)
+
+        with self.stdoutIO() as _:
+            try:
+                exec('from ' + fileName.split(".")[0] + ' import ' + self.testName)
+                return eval(self.testName + '(' + ", ".join(args) + ')')
+            except Exception as exc:
+                print()
+                print(exc)
+
+
 if __name__ == '__main__':
-    gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase',{})
-    print(gen.getMethodNum())
-    print(gen.run([1, 2]))
-    print(gen.run([3, 6]))
-    print(gen.run([7, 1]))
+    gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase', {})
+    # print(gen.getMethodNum())
+    # print(gen.run([1, 2]))
+    # print(gen.run([3, 6]))
+    # print(gen.run([7, 1]))
+
+    mock = gen.recordCall([1, 2])
+    for call in mock.mock_calls:
+        print(call)

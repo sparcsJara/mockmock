@@ -89,7 +89,7 @@ class mockGenerator:
         ast_list = []
         for parameter in parameter_list:
             if parameter:
-                ast_list.append(ast.Num(num=parameter))
+                ast_list.append(ast.Num(n=parameter))
             else:
                 ast_list.append(ast.NameConstant(value=None))
 
@@ -158,12 +158,6 @@ class mockGenerator:
             ast.arg(arg=mockName, annotation=None)
         ]
 
-        #target parameter list declaration
-        test.body = [
-            ast.Assign(targets=[ast.Name(id='parameter_list')], value=self.parameterListBuilder(parameter_list)),
-            *test.body
-        ]
-
         # mock이 return하는 값으로 args를 대입합니다.
 
 
@@ -179,6 +173,12 @@ class mockGenerator:
 
         test.body = [
             *injectingMock,
+            *test.body
+        ]
+
+        #target parameter list declaration
+        test.body = [
+            ast.Assign(targets=[ast.Name(id='parameter_list')], value=self.parameterListBuilder(parameter_list)),
             *test.body
         ]
 

@@ -66,17 +66,25 @@ class mockGenerator:
         except:
             print('해당 Mock을 Instantiate하고 있지 않습니다.')
 
-    def mockResponseBuilder(self, mockName, methodName, returnName):
+    def mockResponseBuilder(self, mockName, methodName, target_start, target_end):
         return ast.Assign(
             targets=[ast.Attribute(
                 value=ast.Attribute(
                     value=ast.Name(id=mockName),
                     attr=methodName
                 ),
-                attr='return_value'
+                attr='side_effect'
             )],
-            value=ast.Name(id=returnName)
-        )
+            value = ast.Call(func=ast.Name(id='sideEffectGenerator'),
+                        args=[
+                            ast.Subscript(value=ast.Name(id='parameter_list'),
+                                slice=ast.Slice(lower=ast.Num(n=target_start), upper=ast.Num(n=target_end), step=None)),
+                            ast.Name(id='args')],
+                        keywords=[]))
+
+    def parameterListBuilder(self, parameter_list):
+        print (ast.List(elts=reduce(lambda a, m: [*a, ast.Num(num=m)], parameter_list, [])))
+        return ast.List(elts=reduce(lambda a, m: [*a, ast.Num(num=m)], parameter_list, []))
 
     def injectMock(self):
         ################## 분석 ##################
@@ -85,6 +93,9 @@ class mockGenerator:
 
         # 대입에서 왼쪽이 여러개일 가능성을 배제하고, [0]으로 첫번째 인자의 이름을 가져옵니다.
         mockName = mockInstantiation.targets[0].id
+
+        parameter_list = reduce(lambda a, m: [*a, *m[1]], self.mockMethodInfo, [])
+        parameter_length_list = reduce(lambda a, m: [*a, len(m[1])], self.mockMethodInfo, [])
 
         ################## 변형 ##################
         # TODO: from unittest.mock import patch 합니다.
@@ -134,14 +145,31 @@ class mockGenerator:
         numMethodCalls = len(self.mockMethodInfo)
 
         test.args.args = [
-            *['arg' + str(n) for n in range(numMethodCalls)],
+            ast.arg(arg='args', annotation=None),
             ast.arg(arg=mockName, annotation=None)
         ]
 
-        # mock이 return하는 값으로 args를 대입합니다.
+        #target parameter list declaration
         test.body = [
-            *[self.mockResponseBuilder(mockName, method[0], 'arg' + str(index))
-                for index, method in enumerate(self.mockMethodInfo)],
+            ast.Assign(targets=[ast.Name(id='parameter_list')], value=self.parameterListBuilder(parameter_list)),
+            *test.body
+        ]
+
+        # mock이 return하는 값으로 args를 대입합니다.
+
+
+        injectingMock = []
+
+        target_start = 0
+        i = 0
+        for methodName, parameters in self. mockMethodInfo:
+            target_end = target_start + parameter_length_list[i]
+            injectingMock.append(self.mockResponseBuilder(mockName, methodName, target_start. target_end ))
+            target_start = target_end
+            i = i+1
+
+        test.body = [
+            *injectingMock,
             *test.body
         ]
 

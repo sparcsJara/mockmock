@@ -213,6 +213,11 @@ def test_generator(target_name, test_name, mock_name):
                 b_info.node_delete(node)
                 break
 
+    for tests in b_info.test_suite[1:]:
+        for test in tests:
+            gen.recordMock(test)
+            # print(test)
+
     return b_info.test_suite[1:]
 
 

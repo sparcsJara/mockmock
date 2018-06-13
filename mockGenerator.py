@@ -7,6 +7,7 @@ from functools import reduce
 from io import StringIO
 import sys
 import contextlib
+import copy
 
 class mockGenerator:
     def __init__(self, sourceCode, testFile, mockTarget, mockMethodInfo):
@@ -23,7 +24,9 @@ class mockGenerator:
         self.mockClassName = mockTarget.split(".")[1]
 
         # ast tree
-        self.root = astor.parse_file(self.testFile)
+        self.clean_root = astor.parse_file(self.testFile)
+        self.root = copy.deepcopy(self.clean_root)
+        self.clean_test = copy.deepcopy(self.getTargetTest())
 
         self.mockMethodInfo = self.transferListMockMethodInfo(mockMethodInfo)
         self.injectMock()
@@ -165,7 +168,7 @@ class mockGenerator:
 
         target_start = 0
         i = 0
-        for methodName, parameters in self. mockMethodInfo:
+        for methodName, parameters in self.mockMethodInfo:
             target_end = target_start + parameter_length_list[i]
             injectingMock.append(self.mockResponseBuilder(mockName, methodName, target_start, target_end ))
             target_start = target_end
@@ -241,17 +244,34 @@ class mockGenerator:
         log = s.getvalue()
         return log
 
-    def recordCall(self, args):
+    def recordMock(self, args):
         fileName = self.instrumentedTestFileName
-        args = map(lambda x: str(x), args)
+        args = list(map(lambda x: str(x), args))
 
-        # with self.stdoutIO() as _:
+        mock = ''
         try:
             exec('from ' + fileName.split(".")[0] + ' import ' + self.testName)
-            return eval(self.testName + '([' + ", ".join(args) + '])')
+            mock = eval(self.testName + '([' + ", ".join(args) + '])')
         except Exception as exc:
             print(exc)
 
+        parameter_list = reduce(lambda a, m: [
+            *a,
+            *[(m[0], parameter) for parameter in m[1]] # (methodName, methodCallIdentifier)
+        ], self.mockMethodInfo, [])
+        parameter_list_with_mocked_value = [
+            (*parameter_list[i], args[i]) # (methodName, methodCallIdentifier, mockedReturnValue)
+            for i in range(len(args))
+        ]
+        # print(mock.mock_calls)
+        # print(args, parameter_list, parameter_list_with_mocked_value)
+        methods = { method[0]: [] for method in self.mockMethodInfo }
+        for call in mock.mock_calls:
+            for methodCall in parameter_list_with_mocked_value:
+                if call[1][0] == methodCall[1]:
+                    methods[methodCall[0]].append(methodCall[2])
+        print(methods)
+        print(astor.dump_tree(self.clean_test))
 
 def sideEffectGenerator(target_parameters, args):
     def sideEffect(parameter):
@@ -276,6 +296,6 @@ if __name__ == '__main__':
     # mock = gen.recordCall([3, 6, 9, 19, 29, 1, 4])
     # print(gen.run([7, 1]))
     # mock = gen.recordCall([1, 2, 3, 4, 5, 6, 7])
-    mock = gen.recordCall([0, 0, 0, 0, 0, 0, 0])
+    mock = gen.recordMock([-26, -12, -18, -35, -70, 80, 63, -1, 11])
     for call in mock.mock_calls:
         print(call)

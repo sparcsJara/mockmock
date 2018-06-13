@@ -173,7 +173,7 @@ class mockGenerator:
         i = 0
         for methodName, parameters in self. mockMethodInfo:
             target_end = target_start + parameter_length_list[i]
-            injectingMock.append(self.mockResponseBuilder(mockName, methodName, target_start. target_end ))
+            injectingMock.append(self.mockResponseBuilder(mockName, methodName, target_start, target_end ))
             target_start = target_end
             i = i+1
 
@@ -265,7 +265,13 @@ def sideEffectGenerator(target_parameters, args):
 
 
 if __name__ == '__main__':
-    gen = mockGenerator('cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase', {})
+    gen = mockGenerator(
+        'cat_owner.py', 'test_cat_owner.py', 'cat_database.CatDatabase',
+        {
+            'getNoCats': [12345678, 12345680, None],
+            'addCat': [12345679, 12345681, 12345682, None]
+        }
+    )
     # print(gen.getMethodNum())
     # print(gen.run([1, 2]))
     # print(gen.run([3, 6]))

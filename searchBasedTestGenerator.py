@@ -56,7 +56,7 @@ def test_generator(target_name, test_name, mock_name):
 
         current_data = None
         if node.parent.parent.is_root:
-            current_data = [0 for i in range(tdg.funcargs)]
+            current_data = [0 for i in range(num_methods)]
         else:
             current_data = b_info.test_suite[node.parent.parent.bid][0 if node.parent.tf else 1]
 

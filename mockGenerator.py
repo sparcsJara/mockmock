@@ -79,12 +79,21 @@ class mockGenerator:
                         args=[
                             ast.Subscript(value=ast.Name(id='parameter_list'),
                                 slice=ast.Slice(lower=ast.Num(n=target_start), upper=ast.Num(n=target_end), step=None)),
-                            ast.Name(id='args')],
+                            ast.Subscript(value=ast.Name(id='args'),
+                                          slice=ast.Slice(lower=ast.Num(n=target_start), upper=ast.Num(n=target_end),
+                                                          step=None))
+                        ],
                         keywords=[]))
 
     def parameterListBuilder(self, parameter_list):
-        print (ast.List(elts=reduce(lambda a, m: [*a, ast.Num(num=m)], parameter_list, [])))
-        return ast.List(elts=reduce(lambda a, m: [*a, ast.Num(num=m)], parameter_list, []))
+        ast_list = []
+        for parameter in parameter_list:
+            if parameter:
+                ast_list.append(ast.Num(num=parameter))
+            else:
+                ast_list.append(ast.NameConstant(value=None))
+
+        return ast.List(elts=ast_list)
 
     def injectMock(self):
         ################## 분석 ##################

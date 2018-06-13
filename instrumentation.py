@@ -43,7 +43,8 @@ def instrument(filename, mockname):
             for child in ast.iter_child_nodes(node):
                 dfs_instrument_method(child)
     dfs_instrument_method(root)
-
+    for method in method_dic:
+        method_dic[method].append(None)
 
 
     pre_instrumented_file = open('pre_instrumented_' + filename, 'w')
